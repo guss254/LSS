@@ -79,12 +79,14 @@
             display: none;
         }
     </style>
+    <!-- Include SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 </head>
 <body>
 
 <div class="container">
     <h2>Form Presensi</h2>
-    <form id="presensi-form" method="POST" enctype="multipart/form-data" action="save_presensi.php">
+    <form id="presensi-form" method="POST">
         <!-- Input Nama -->
         <div class="form-group">
             <label for="nama">Nama</label>
@@ -120,9 +122,10 @@
         </div>
 
         <div class="form-group">
-            <button type="submit">Simpan Presensi</button>
+            <button type="submit" id="save-btn">Simpan Presensi</button>
         </div>
     </form>
+    <button onclick="saveToExcel()" class="form-group" style="width: 100%; padding: 10px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer;">Download Excel</button>
 </div>
 
 <script>
@@ -195,6 +198,23 @@
         imagePreview.src = fotoBase64;
         imagePreview.style.display = 'block';
     });
+
+    function saveToExcel() {
+        const formData = {
+            Nama: document.getElementById('nama').value,
+            'Unit Kerja': document.getElementById('unit_kerja').value,
+            'Tanggal & Waktu': document.getElementById('waktu').value,
+            Alamat: document.getElementById('alamat').value,
+            Foto: document.getElementById('foto').value
+        };
+
+        const ws = XLSX.utils.json_to_sheet([formData]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Presensi');
+
+        // Download the Excel file
+        XLSX.writeFile(wb, 'form_presensi.xlsx');
+    }
 </script>
 
 </body>
