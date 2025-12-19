@@ -7,203 +7,253 @@ import json
 def init_session_state():
     """Inisialisasi session state untuk menyimpan data"""
     if 'data_produksi' not in st.session_state:
-        # Coba load dari query params atau session storage
-        try:
-            # Cek jika ada data di query params (untuk persistensi)
-            if st.query_params.get("data"):
-                data_json = st.query_params.get("data")
-                data_dict = json.loads(data_json)
-                st.session_state.data_produksi = pd.DataFrame(data_dict)
-            else:
-                st.session_state.data_produksi = pd.DataFrame(columns=[
-                    'No.', 'Tanggal', 'Jenis', 'Kode Produksi', 'Jumlah (kg)', 'Kode Palet'
-                ])
-        except:
-            st.session_state.data_produksi = pd.DataFrame(columns=[
-                'No.', 'Tanggal', 'Jenis', 'Kode Produksi', 'Jumlah (kg)', 'Kode Palet'
-            ])
-
-def save_to_query_params(df):
-    """Simpan data ke query params untuk persistensi"""
-    if not df.empty:
-        data_dict = df.to_dict('records')
-        data_json = json.dumps(data_dict)
-        st.query_params["data"] = data_json
+        # Data awal yang sudah ada (bisa diubah sesuai kebutuhan)
+        initial_data = [
+            {
+                'No.': 1,
+                'Tanggal': '15-01-2024',
+                'Jenis': 'Prod',
+                'Kode Produksi': '076',
+                'Jumlah (kg)': 100.5,
+                'Kode Palet': 'P001',
+                'Status': 'Ada',
+                'Kondisi': 'Baik',
+                'Catatan': ''
+            },
+            {
+                'No.': 2,
+                'Tanggal': '15-01-2024',
+                'Jenis': 'Prod',
+                'Kode Produksi': '054',
+                'Jumlah (kg)': 85.2,
+                'Kode Palet': 'P002',
+                'Status': 'Ada',
+                'Kondisi': 'Baik',
+                'Catatan': ''
+            },
+            {
+                'No.': 3,
+                'Tanggal': '16-01-2024',
+                'Jenis': 'Blen',
+                'Kode Produksi': '082',
+                'Jumlah (kg)': 120.0,
+                'Kode Palet': 'P003',
+                'Status': 'Ada',
+                'Kondisi': 'Baik',
+                'Catatan': ''
+            },
+            {
+                'No.': 4,
+                'Tanggal': '16-01-2024',
+                'Jenis': 'Prod',
+                'Kode Produksi': '091',
+                'Jumlah (kg)': 95.7,
+                'Kode Palet': 'P004',
+                'Status': 'Ada',
+                'Kondisi': 'Baik',
+                'Catatan': ''
+            },
+            {
+                'No.': 5,
+                'Tanggal': '17-01-2024',
+                'Jenis': 'Blen',
+                'Kode Produksi': '067',
+                'Jumlah (kg)': 110.3,
+                'Kode Palet': 'P005',
+                'Status': 'Ada',
+                'Kondisi': 'Baik',
+                'Catatan': ''
+            }
+        ]
+        st.session_state.data_produksi = pd.DataFrame(initial_data)
+    
+    if 'data_edited' not in st.session_state:
+        st.session_state.data_edited = False
 
 def main():
     st.set_page_config(
-        page_title="Form Input Data Produksi",
-        page_icon="🏭",
+        page_title="Form Pengecekan Data Produksi",
+        page_icon="✅",
         layout="wide"
     )
     
     # Inisialisasi session state
     init_session_state()
     
-    st.title("🏭 FORM INPUT DATA PRODUKSI")
+    st.title("✅ FORM PENGEČEKAN DATA PRODUKSI")
     st.markdown("---")
     
-    # Bagian 1: Form Input
-    st.subheader("📝 Input Data Baru")
+    # Informasi aplikasi
+    st.info("""
+    **📋 PETUNJUK PENGGUNAAN:**
+    1. Data produksi sudah terisi sebelumnya
+    2. Lakukan pengecekan di lapangan untuk setiap item
+    3. Update **Status**, **Kondisi**, dan **Jumlah (kg)** sesuai kondisi aktual
+    4. Tambahkan **Catatan** jika diperlukan
+    5. Klik **SIMPAN PERUBAHAN** setelah selesai
+    """)
     
-    with st.form("input_form", clear_on_submit=True):
-        col1, col2 = st.columns(2)
+    # Tampilkan semua data dalam bentuk form yang bisa diedit
+    st.subheader("📋 DATA PRODUKSI YANG AKAN DICEK")
+    
+    # Buat form untuk editing data
+    with st.form("edit_form"):
+        edited_data = []
         
-        with col1:
-            tgl = st.date_input("📅 Tanggal", datetime.now())
-            jenis = st.selectbox("📦 Jenis Data", ["Prod", "Blen"])
+        # Loop melalui setiap baris data
+        for idx, row in st.session_state.data_produksi.iterrows():
+            st.markdown(f"### Data #{int(row['No.'])}")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.write(f"**Tanggal:** {row['Tanggal']}")
+                st.write(f"**Jenis:** {row['Jenis']}")
+                st.write(f"**Kode:** {row['Kode Produksi']}")
+            
+            with col2:
+                st.write(f"**Kode Palet:** {row['Kode Palet']}")
+                
+                # Status dropdown
+                status = st.selectbox(
+                    f"Status #{int(row['No.'])}",
+                    ["Ada", "Tidak Ada", "Berkurang", "Rusak"],
+                    index=["Ada", "Tidak Ada", "Berkurang", "Rusak"].index(row['Status']),
+                    key=f"status_{idx}"
+                )
+                
+                # Kondisi dropdown
+                kondisi = st.selectbox(
+                    f"Kondisi #{int(row['No.'])}",
+                    ["Baik", "Rusak Ringan", "Rusak Berat", "Kadaluarsa"],
+                    index=["Baik", "Rusak Ringan", "Rusak Berat", "Kadaluarsa"].index(row['Kondisi']),
+                    key=f"kondisi_{idx}"
+                )
+            
+            with col3:
+                # Jumlah (kg) - bisa diedit
+                jumlah = st.number_input(
+                    f"Jumlah Aktual (kg) #{int(row['No.'])}",
+                    min_value=0.0,
+                    step=0.01,
+                    value=float(row['Jumlah (kg)']),
+                    key=f"jumlah_{idx}"
+                )
+                
+                # Catatan
+                catatan = st.text_area(
+                    f"Catatan #{int(row['No.'])}",
+                    value=row['Catatan'],
+                    placeholder="Tambahkan catatan jika diperlukan...",
+                    key=f"catatan_{idx}"
+                )
+            
+            # Tambahkan data yang diedit
+            edited_data.append({
+                'No.': row['No.'],
+                'Tanggal': row['Tanggal'],
+                'Jenis': row['Jenis'],
+                'Kode Produksi': row['Kode Produksi'],
+                'Jumlah (kg)': jumlah,
+                'Kode Palet': row['Kode Palet'],
+                'Status': status,
+                'Kondisi': kondisi,
+                'Catatan': catatan
+            })
+            
+            st.markdown("---")
         
+        # Tombol submit
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            kode = st.text_input("🏷️ Kode Produksi", placeholder="076, 054, etc")
-            berat = st.number_input("⚖️ Jumlah (kg)", min_value=0.0, step=0.01)
-        
-        kode_palet = st.text_input("📦 Kode Palet", placeholder="Opsional")
-        
-        submitted = st.form_submit_button("💾 TAMBAH DATA")
+            submitted = st.form_submit_button(
+                "💾 SIMPAN SEMUA PERUBAHAN",
+                use_container_width=True,
+                type="primary"
+            )
     
     # Proses ketika form disubmit
     if submitted:
-        if not kode:
-            st.error("⚠️ Harap isi Kode Produksi!")
-        elif berat <= 0:
-            st.error("⚠️ Jumlah (kg) harus lebih dari 0!")
-        else:
-            # Buat data baru
-            new_data = pd.DataFrame([{
-                'No.': len(st.session_state.data_produksi) + 1,
-                'Tanggal': tgl.strftime('%d-%m-%Y'),
-                'Jenis': jenis,
-                'Kode Produksi': kode,
-                'Jumlah (kg)': berat,
-                'Kode Palet': kode_palet if kode_palet else '-'
-            }])
-            
-            # Tambahkan ke session state
-            st.session_state.data_produksi = pd.concat(
-                [st.session_state.data_produksi, new_data], 
-                ignore_index=True
-            )
-            
-            # Simpan ke query params untuk persistensi
-            save_to_query_params(st.session_state.data_produksi)
-            
-            st.success(f"✅ Data berhasil ditambahkan! Total data: {len(st.session_state.data_produksi)}")
-            st.rerun()
+        # Update session state dengan data yang diedit
+        st.session_state.data_produksi = pd.DataFrame(edited_data)
+        st.session_state.data_edited = True
+        
+        st.success("✅ Semua perubahan berhasil disimpan!")
+        st.balloons()
     
+    # Tampilkan summary setelah edit
     st.markdown("---")
-    
-    # Bagian 2: Tampilkan Data yang Telah Disimpan
-    st.subheader("📊 Data Produksi yang Tersimpan")
+    st.subheader("📊 SUMMARY PENGEČEKAN")
     
     if not st.session_state.data_produksi.empty:
-        # Buat dataframe untuk display dengan tombol hapus
-        display_df = st.session_state.data_produksi.copy()
-        
-        # Tampilkan dataframe
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True
-        )
-        
-        # Bagian untuk hapus data spesifik
-        st.markdown("### 🗑️ Hapus Data Spesifik")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            # Pilihan hapus berdasarkan nomor
-            hapus_no = st.number_input(
-                "Nomor data yang akan dihapus:",
-                min_value=1,
-                max_value=len(st.session_state.data_produksi) if not st.session_state.data_produksi.empty else 1,
-                step=1,
-                key="hapus_no"
-            )
-        
-        with col2:
-            # Pilihan hapus berdasarkan kode produksi
-            kode_options = st.session_state.data_produksi['Kode Produksi'].unique().tolist()
-            hapus_kode = st.selectbox(
-                "Atau pilih berdasarkan Kode Produksi:",
-                ["Pilih kode"] + kode_options,
-                key="hapus_kode"
-            )
-        
-        with col3:
-            st.write("")
-            st.write("")
-            if st.button("🗑️ HAPUS DATA TERPILIH", use_container_width=True):
-                if hapus_kode != "Pilih kode":
-                    # Hapus berdasarkan kode produksi
-                    sebelum = len(st.session_state.data_produksi)
-                    st.session_state.data_produksi = st.session_state.data_produksi[
-                        st.session_state.data_produksi['Kode Produksi'] != hapus_kode
-                    ]
-                    sesudah = len(st.session_state.data_produksi)
-                    if sebelum > sesudah:
-                        st.success(f"✅ Data dengan kode {hapus_kode} berhasil dihapus!")
-                        # Update nomor urut
-                        st.session_state.data_produksi['No.'] = range(1, len(st.session_state.data_produksi) + 1)
-                        save_to_query_params(st.session_state.data_produksi)
-                        st.rerun()
-                elif hapus_no and 1 <= hapus_no <= len(st.session_state.data_produksi):
-                    # Hapus berdasarkan nomor
-                    st.session_state.data_produksi = st.session_state.data_produksi.drop(
-                        st.session_state.data_produksi.index[hapus_no - 1]
-                    )
-                    # Update nomor urut
-                    st.session_state.data_produksi['No.'] = range(1, len(st.session_state.data_produksi) + 1)
-                    save_to_query_params(st.session_state.data_produksi)
-                    st.success(f"✅ Data nomor {hapus_no} berhasil dihapus!")
-                    st.rerun()
-        
-        # Tampilkan statistik
-        st.markdown("### 📈 Statistik Data")
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Total Data", len(st.session_state.data_produksi))
+            total_data = len(st.session_state.data_produksi)
+            st.metric("Total Data", total_data)
         
         with col2:
-            total_berat = st.session_state.data_produksi['Jumlah (kg)'].sum()
-            st.metric("Total Berat (kg)", f"{total_berat:.2f}")
+            status_ada = len(st.session_state.data_produksi[st.session_state.data_produksi['Status'] == 'Ada'])
+            st.metric("Status: Ada", f"{status_ada}/{total_data}")
         
         with col3:
-            avg_berat = st.session_state.data_produksi['Jumlah (kg)'].mean()
-            st.metric("Rata-rata (kg)", f"{avg_berat:.2f}")
+            status_tidak_ada = len(st.session_state.data_produksi[st.session_state.data_produksi['Status'] == 'Tidak Ada'])
+            st.metric("Status: Tidak Ada", f"{status_tidak_ada}/{total_data}")
         
         with col4:
-            st.metric("Tanggal Terakhir", 
-                     st.session_state.data_produksi.iloc[-1]['Tanggal'])
+            kondisi_baik = len(st.session_state.data_produksi[st.session_state.data_produksi['Kondisi'] == 'Baik'])
+            st.metric("Kondisi: Baik", f"{kondisi_baik}/{total_data}")
         
-        # Tampilkan data per jenis
-        st.markdown("### 📊 Distribusi per Jenis")
-        jenis_counts = st.session_state.data_produksi['Jenis'].value_counts()
-        col1, col2 = st.columns(2)
+        # Tampilkan data dalam tabel
+        st.markdown("### 📋 DATA TERUPDATE")
         
-        with col1:
-            for jenis, count in jenis_counts.items():
-                st.write(f"**{jenis}**: {count} data")
+        # Format dataframe untuk display
+        display_df = st.session_state.data_produksi.copy()
         
-        with col2:
-            jenis_berat = st.session_state.data_produksi.groupby('Jenis')['Jumlah (kg)'].sum()
-            for jenis, berat in jenis_berat.items():
-                st.write(f"**{jenis}**: {berat:.2f} kg")
+        # Tambahkan warna untuk status
+        def color_status(val):
+            if val == 'Ada':
+                return 'background-color: #d4edda; color: #155724;'
+            elif val == 'Tidak Ada':
+                return 'background-color: #f8d7da; color: #721c24;'
+            elif val == 'Berkurang':
+                return 'background-color: #fff3cd; color: #856404;'
+            elif val == 'Rusak':
+                return 'background-color: #f5c6cb; color: #721c24;'
+            return ''
         
-        # Bagian 3: Download dan Reset
+        # Tambahkan warna untuk kondisi
+        def color_kondisi(val):
+            if val == 'Baik':
+                return 'background-color: #d1ecf1; color: #0c5460;'
+            elif val == 'Rusak Ringan':
+                return 'background-color: #ffeaa7; color: #856404;'
+            elif val == 'Rusak Berat':
+                return 'background-color: #fab1a0; color: #b33939;'
+            elif val == 'Kadaluarsa':
+                return 'background-color: #a29bfe; color: #2d3436;'
+            return ''
+        
+        # Apply styling
+        styled_df = display_df.style.map(color_status, subset=['Status'])\
+                                   .map(color_kondisi, subset=['Kondisi'])
+        
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+        
+        # Tombol download
         st.markdown("---")
-        st.subheader("💾 Export & Management Data")
+        st.subheader("💾 EXPORT DATA")
         
-        col1, col2, col3 = st.columns([2, 1, 1])
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             # Download Excel
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
                 st.session_state.data_produksi.to_excel(
-                    writer, 
-                    index=False, 
-                    sheet_name='Data Produksi'
+                    writer,
+                    index=False,
+                    sheet_name='Hasil Pengecekan'
                 )
             
             excel_buffer.seek(0)
@@ -211,41 +261,69 @@ def main():
             st.download_button(
                 label="📥 DOWNLOAD EXCEL",
                 data=excel_buffer,
-                file_name=f"data_produksi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                file_name=f"hasil_pengecekan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
         
         with col2:
-            # Tombol reset semua data
-            if st.button("🗑️ RESET SEMUA DATA", use_container_width=True, type="secondary"):
-                st.session_state.data_produksi = pd.DataFrame(columns=[
-                    'No.', 'Tanggal', 'Jenis', 'Kode Produksi', 'Jumlah (kg)', 'Kode Palet'
-                ])
-                # Hapus juga dari query params
-                if "data" in st.query_params:
-                    del st.query_params["data"]
-                st.success("✅ Semua data telah direset!")
-                st.rerun()
+            # Download CSV
+            csv_buffer = BytesIO()
+            st.session_state.data_produksi.to_csv(csv_buffer, index=False)
+            csv_buffer.seek(0)
+            
+            st.download_button(
+                label="📄 DOWNLOAD CSV",
+                data=csv_buffer,
+                file_name=f"hasil_pengecekan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
         
         with col3:
-            # Tombol backup ke session storage
-            if st.button("💾 BACKUP DATA", use_container_width=True):
-                save_to_query_params(st.session_state.data_produksi)
-                st.success("✅ Data telah di-backup! Data akan tersimpan meskipun browser di-refresh.")
-    
-    else:
-        st.info("📭 Belum ada data. Silakan input data terlebih dahulu.")
+            # Tombol reset ke data awal
+            if st.button("🔄 RESET KE DATA AWAL", use_container_width=True):
+                init_session_state()
+                st.success("✅ Data telah direset ke kondisi awal!")
+                st.rerun()
+        
+        # Tampilkan data yang bermasalah
+        st.markdown("---")
+        st.subheader("⚠️ DATA YANG PERLU PERHATIAN")
+        
+        # Filter data yang bermasalah
+        masalah_df = st.session_state.data_produksi[
+            (st.session_state.data_produksi['Status'] != 'Ada') |
+            (st.session_state.data_produksi['Kondisi'] != 'Baik') |
+            (st.session_state.data_produksi['Catatan'] != '')
+        ]
+        
+        if not masalah_df.empty:
+            st.dataframe(masalah_df, use_container_width=True, hide_index=True)
+            
+            # Summary masalah
+            st.markdown("**Ringkasan Masalah:**")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                for status in ['Tidak Ada', 'Berkurang', 'Rusak']:
+                    count = len(st.session_state.data_produksi[st.session_state.data_produksi['Status'] == status])
+                    if count > 0:
+                        st.write(f"- **Status {status}:** {count} data")
+            
+            with col2:
+                for kondisi in ['Rusak Ringan', 'Rusak Berat', 'Kadaluarsa']:
+                    count = len(st.session_state.data_produksi[st.session_state.data_produksi['Kondisi'] == kondisi])
+                    if count > 0:
+                        st.write(f"- **Kondisi {kondisi}:** {count} data")
+        else:
+            st.success("🎉 Semua data dalam kondisi baik!")
     
     st.markdown("---")
-    st.info("""
-    ℹ️ **Cara penggunaan:**
-    1. Input data melalui form di atas
-    2. Klik **TAMBAH DATA** untuk menyimpan
-    3. Ulangi untuk menambah data lain
-    4. Gunakan fitur **HAPUS DATA TERPILIH** untuk menghapus data tertentu
-    5. Klik **BACKUP DATA** agar data tidak hilang saat refresh
-    6. **DOWNLOAD EXCEL** untuk menyimpan data permanen
+    st.caption("""
+    **Aplikasi Pengecekan Data Produksi** - 
+    Data awal sudah terisi. Lakukan pengecekan di lapangan dan update sesuai kondisi aktual.
     """)
 
 if __name__ == "__main__":
